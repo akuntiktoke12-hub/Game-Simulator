@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>Trader Simulator</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top"><span class="brand-mark">TS</span><span class="brand-copy"><span>Trader<span class="brand-muted">Simulator</span></span><small>By Amungkas</small></span></a>
+    <div class="market-tag"><span class="live-dot"></span> CHART FOREX <span class="tag-muted">via TradingView</span></div>
+    <div class="game-clock topbar-clock" aria-label="Tanggal dan waktu game"><span id="gameDate">Tahun 1 · Bulan 1 · Hari 1</span><strong id="gameTime">00:00</strong></div>
+    <div class="auth-user" id="authUser" hidden><span id="userEmail"></span><button class="close-button" id="logoutButton" type="button">Keluar</button></div>
+  </header>
+
+  <main id="top" class="page-shell">
+    <nav class="main-nav" aria-label="Menu utama">
+      <button class="nav-button active" id="homeTab" type="button" aria-selected="true">Home</button>
+      <button class="nav-button" id="tradingTab" type="button" aria-selected="false">Trading</button>
+      <button class="nav-button" id="businessTab" type="button" aria-selected="false">Bisnis</button>
+      <button class="nav-button" id="investmentTab" type="button" aria-selected="false">Investasi</button>
+    </nav>
+
+    <section id="homeView" class="app-view home-view">
+      <div class="business-intro">
+        <p class="eyebrow">AKUN SIMULASI · RINGKASAN PERMAINAN</p>
+        <h1>Selamat datang di <span>Home</span></h1>
+        <p class="intro-copy">Pantau saldo bersama dan pilih aktivitas simulasi Anda.</p>
+        <button class="close-button home-reset-button" id="resetButton" type="button">Reset akun</button>
+      </div>
+      <section class="panel home-balance-card">
+        <div>
+          <span class="stat-label">Saldo utama</span>
+          <strong id="homeBalance">Rp10.000.000</strong>
+          <span class="business-day-label">Saldo utama dipakai untuk transfer ke Trading dan aktivitas Bisnis.</span>
+        </div>
+        <button class="button button-quiet" id="openBalanceModal" type="button">Rincian saldo</button>
+      </section>
+      <div class="home-summary-grid">
+        <article class="stat-card"><span class="stat-label">Total equity</span><strong id="homeEquity">Rp10.000.000</strong><span class="stat-hint">Saldo utama + modal Trading + floating P/L</span></article>
+        <article class="stat-card"><span class="stat-label">Floating P/L Trading</span><strong id="homeFloating" class="positive">Rp0</strong><span class="stat-hint">Perubahan nilai posisi terbuka</span></article>
+      </div>
+      <div class="business-cards home-shortcuts" aria-label="Menu permainan">
+        <button class="panel business-card home-shortcut" type="button" data-view="trading"><span>01</span><h2>Trading</h2><p>Buka dan pantau posisi trading simulasi.</p><b>Masuk Trading →</b></button>
+        <button class="panel business-card home-shortcut" type="button" data-view="business"><span>02</span><h2>Bisnis</h2><p>Gunakan saldo bersama untuk membuka dan mengelola usaha.</p><b>Masuk Bisnis →</b></button>
+        <button class="panel business-card home-shortcut" type="button" data-view="investment"><span>03</span><h2>Investasi</h2><p>Pelajari pilihan investasi virtual.</p><b>Masuk Investasi →</b></button>
+      </div>
+    </section>
+
+    <section id="tradingView" class="app-view" hidden>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">TRADING · TANPA TAKUT KEHABISAN UANG</p>
+        <h1>Trader <span>Simulator</span></h1>
+        <p class="intro-copy">Belajar Trading Dengan Chart Real dan Saldo virtual.</p>
+      </div>
+    </section>
+
+    <section class="panel fund-panel" aria-label="Deposit dan withdrawal simulasi">
+      <div class="fund-copy"><div class="panel-title">Transfer saldo Trading</div><div class="panel-subtitle">Deposit memindahkan saldo utama ke modal Trading; withdrawal memindahkan modal Trading kembali ke saldo utama.</div></div>
+      <div class="fund-controls"><label class="visually-hidden" for="fundAmount">Jumlah deposit atau withdrawal</label><input id="fundAmount" type="number" min="1" step="1000" value="100000" aria-label="Jumlah deposit atau withdrawal"><button class="button button-buy" id="depositButton" type="button">Deposit</button><button class="button button-quiet" id="withdrawButton" type="button">Withdrawal</button></div>
+    </section>
+
+    <section class="stats-grid" aria-label="Ringkasan akun demo">
+      <article class="stat-card"><span class="stat-label">Modal Trading</span><strong id="balance">Rp0</strong><span class="stat-hint">Dana Trading, terpisah dari saldo utama</span></article>
+      <article class="stat-card"><span class="stat-label">Equity</span><strong id="equity">Rp10.000.000</strong><span class="stat-hint">Saldo + floating P/L</span></article>
+      <article class="stat-card"><span class="stat-label">Floating P/L</span><strong id="floating" class="positive">Rp0</strong><span class="stat-hint">Posisi terbuka</span></article>
+      <article class="stat-card"><span class="stat-label">Total P/L</span><strong id="totalPL" class="positive">Rp0</strong><span class="stat-hint">Hasil posisi ditutup</span></article>
+    </section>
+
+    <div class="main-grid">
+      <section class="panel chart-panel">
+        <div class="panel-heading chart-heading">
+          <div><div class="panel-title">Chart pasar</div><div class="panel-subtitle">Data chart eksternal dari TradingView</div></div>
+          <label class="pair-picker"><span class="visually-hidden">Pilih pair</span><select id="pairSelect" aria-label="Pilih pair forex"></select></label>
+        </div>
+        <div class="chart-frame">
+          <div id="chartWidget" class="tradingview-widget-container"></div>
+        </div>
+        <p class="chart-note">Chart menampilkan data dari TradingView dan dapat tertunda sesuai sumber data. Chart real tidak terhubung ke eksekusi transaksi demo di halaman ini.</p>
+      </section>
+
+      <aside class="panel trade-panel">
+        <div class="panel-heading">
+          <div><div class="panel-title">HALAMAN TRANSAKSI</div><div class="panel-subtitle">Harga transaksi bergerak secara simulasi</div></div>
+          <span class="sim-badge">SIMULASI</span>
+        </div>
+        <div class="sim-price-box">
+          <span class="stat-label">Harga simulasi · <span id="pricePair">XAUUSD</span></span>
+          <strong id="simPrice">2,350.00</strong>
+          <span id="priceChange" class="price-change">+0.00 (0.00%)</span>
+        </div>
+        <div class="order-form">
+          <label for="leverage">Leverage</label>
+          <select id="leverage" aria-label="Pilih leverage"></select>
+          <label for="lots">Ukuran posisi (lot)</label>
+          <input id="lots" type="number" min="0.01" max="10" step="0.01" value="0.10">
+          <div class="form-row"><label for="stopLoss">Stop loss <span>opsional</span></label><input id="stopLoss" type="number" min="0" step="0.00001" placeholder="Harga"></div>
+          <div class="form-row"><label for="takeProfit">Take profit <span>opsional</span></label><input id="takeProfit" type="number" min="0" step="0.00001" placeholder="Harga"></div>
+          <div class="order-info"><span>Margin simulasi (<span id="leverageLabel">1:100</span>)</span><strong id="margin">Rp0</strong></div>
+          <div class="order-info"><span>Margin terpakai</span><strong id="usedMargin">Rp0</strong></div>
+          <div class="button-row"><button class="button button-buy" id="buyButton" type="button">BUY <span>↗</span></button><button class="button button-sell" id="sellButton" type="button">SELL <span>↘</span></button></div>
+        </div>
+        <p class="form-footnote">Perhitungan memakai kurs simulasi USD/IDR Rp16.000 dan ukuran kontrak standar. Spread, swap, dan slippage tidak dihitung.</p>
+      </aside>
+    </div>
+
+    <section class="panel positions-panel">
+      <div class="panel-heading"><div><div class="panel-title">Posisi terbuka</div><div class="panel-subtitle">Pantau posisi yang sedang berjalan</div></div><div class="position-actions"><button class="close-button" id="closeAllButton" type="button">Close ALL</button><span id="positionCount" class="count-badge">0 posisi</span></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Pair</th><th>Arah</th><th>Lot</th><th>Harga buka</th><th>Harga sekarang</th><th>Stop loss / take profit</th><th>Floating P/L</th><th></th></tr></thead><tbody id="positionsBody"><tr class="empty-row"><td colspan="8">Belum ada posisi terbuka. Buat transaksi demo untuk mulai.</td></tr></tbody></table></div>
+    </section>
+
+    <section class="panel history-panel">
+      <div class="panel-heading"><div><div class="panel-title">Riwayat transaksi</div><div class="panel-subtitle">Posisi yang sudah ditutup</div></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Pair</th><th>Arah</th><th>Lot</th><th>Harga buka</th><th>Harga tutup</th><th>Alasan</th><th>Hasil</th></tr></thead><tbody id="historyBody"><tr class="empty-row"><td colspan="7">Riwayat transaksi masih kosong.</td></tr></tbody></table></div>
+    </section>
+
+    <footer class="disclaimer"><strong>Catatan penting:</strong> ini hanya game/paper trading untuk latihan, bukan layanan broker atau nasihat investasi. Chart berasal dari TradingView, sedangkan harga transaksi, saldo, profit/loss, kurs konversi, dan eksekusi dalam game adalah simulasi—bukan harga real-time dan tidak menghasilkan keuntungan atau kerugian uang sungguhan. Chart eksternal memerlukan koneksi internet.</footer>
+    </section>
+
+    <section id="businessView" class="app-view business-view" hidden>
+      <div class="business-intro">
+        <p class="eyebrow">SIMULASI · RENCANAKAN LANGKAH BERIKUTNYA</p>
+        <h1>Menu <span>Bisnis</span></h1>
+        <p class="intro-copy">Ruang untuk mengembangkan dan mengelola bisnis virtual Anda.</p>
+      </div>
+      <section class="panel business-overview">
+        <div><span class="stat-label">Saldo utama</span><strong id="businessBalance">Rp10.000.000</strong><span class="business-day-label">Saldo utama · kalender simulasi</span></div>
+      </section>
+      <div id="businessCatalog" class="business-cards" aria-label="Pilihan bisnis"></div>
+      <section class="panel business-owned">
+        <div class="panel-heading"><div><div class="panel-title">Bisnis yang dimiliki</div><div class="panel-subtitle">Pendapatan bersih simulasi untuk setiap hari bisnis</div></div><span id="ownedBusinessCount" class="count-badge">0 usaha</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Jenis bisnis</th><th>Jumlah</th><th>Modal per usaha</th><th>Pendapatan bersih / hari</th></tr></thead><tbody id="ownedBusinessesBody"><tr class="empty-row"><td colspan="4">Belum memiliki bisnis. Pilih usaha untuk memulai.</td></tr></tbody></table></div>
+      </section>
+    </section>
+
+    <section id="investmentView" class="app-view business-view" hidden>
+      <div class="business-intro">
+        <p class="eyebrow">SIMULASI · KENALI PILIHAN INVESTASI</p>
+        <h1>Menu <span>Investasi</span></h1>
+        <p class="intro-copy">Pelajari dasar investasi melalui pengalaman virtual tanpa menggunakan uang sungguhan.</p>
+      </div>
+      <section class="panel business-overview investment-balance">
+        <div><span class="stat-label">Saldo utama</span><strong id="investmentBalance">Rp10.000.000</strong><span class="business-day-label">Saldo utama pemain.</span></div>
+      </section>
+      <section class="panel business-welcome">
+        <span class="business-icon" aria-hidden="true">↗</span>
+        <h2>Rencanakan investasi</h2>
+        <p>Menu investasi sudah tersedia. Fitur seperti memilih aset, menentukan jumlah investasi, dan memantau perkembangan nilai dapat ditambahkan sebagai simulasi terpisah dari akun trading.</p>
+        <span class="sim-badge">MODE INVESTASI</span>
+      </section>
+      <div class="business-cards" aria-label="Fitur investasi">
+        <article class="panel business-card"><span>01</span><h2>Pilih aset</h2><p>Kenali berbagai pilihan aset untuk investasi virtual.</p></article>
+        <article class="panel business-card"><span>02</span><h2>Atur alokasi</h2><p>Tentukan alokasi dana dan rencana investasi.</p></article>
+        <article class="panel business-card"><span>03</span><h2>Pantau perkembangan</h2><p>Lihat perubahan nilai investasi dalam simulasi.</p></article>
+      </div>
+    </section>
+  </main>
+  <dialog id="authModal" class="balance-modal auth-modal" aria-labelledby="authTitle">
+    <p class="eyebrow">AKUN ONLINE</p>
+    <h2 id="authTitle">Masuk ke game</h2>
+    <p class="auth-description">Login untuk menyimpan progres dan bermain dari perangkat lain.</p>
+    <form id="authForm">
+      <label for="authEmail">Email</label>
+      <input id="authEmail" type="email" autocomplete="email" required>
+      <label for="authPassword">Kata sandi</label>
+      <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required>
+      <button class="button button-buy auth-submit" id="authSubmit" type="submit">Masuk</button>
+    </form>
+    <p id="authMessage" class="auth-message" role="status" aria-live="polite"></p>
+    <button class="auth-switch" id="authSwitch" type="button">Belum punya akun? Daftar</button>
+  </dialog>
+  <dialog id="balanceModal" class="balance-modal" aria-labelledby="balanceModalTitle">
+    <div class="balance-modal-heading"><div><p class="eyebrow">RINGKASAN AKUN</p><h2 id="balanceModalTitle">Rincian saldo</h2></div><button class="close-button" id="closeBalanceModal" type="button" aria-label="Tutup rincian saldo">Tutup</button></div>
+    <div class="balance-modal-rows"><div><span>Saldo utama</span><strong id="modalBalance">Rp10.000.000</strong></div><div><span>Modal Trading</span><strong id="modalTradingBalance">Rp0</strong></div><div><span>Floating P/L Trading</span><strong id="modalFloating">Rp0</strong></div><div><span>Total equity</span><strong id="modalEquity">Rp10.000.000</strong></div></div>
+    <p>Saldo akun digunakan bersama untuk aktivitas Trading dan Bisnis. Semua nilai adalah simulasi.</p>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
